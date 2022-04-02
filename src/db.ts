@@ -3,15 +3,38 @@ import fs from 'fs';
 import { generateId } from './util';
 
 type Data = {
-  builds: { [buildId: string]: string };
+  builds: {
+    [buildId: string]: {
+      createdAt: number;
+      lastViewedAt: number;
+      data: string;
+      ip: string;
+      views: number;
+    };
+  };
 };
 
 const db = JSON.parse(
   fs.readFileSync('./data.json', 'utf8') || '{"builds":{}}',
 ) as Data;
 
+Object.keys(db.builds).forEach((buildId) => {
+  if (typeof db.builds[buildId] === 'string') {
+    db.builds[buildId] = {
+      createdAt: Date.now(),
+      lastViewedAt: Date.now(),
+      data: db.builds[buildId] as unknown as string,
+      ip: '',
+      views: 0,
+    };
+  }
+});
+
+let lastDbSaveAt = 0;
 let saveInProgress = false;
 async function saveDb() {
+  lastDbSaveAt = Date.now();
+
   if (saveInProgress) {
     setTimeout(saveDb, 3000);
     return;
@@ -34,7 +57,7 @@ function requestDbSave() {
   saveDb().catch(console.error);
 }
 
-export async function saveNewBuild(str: string) {
+export async function saveNewBuild(str: string, ip: string) {
   if (str.length > 50_000) {
     throw new Error('String too long');
   }
@@ -44,7 +67,13 @@ export async function saveNewBuild(str: string) {
     id = await generateId();
   } while (db.builds[id]);
 
-  db.builds[id] = str;
+  db.builds[id] = {
+    createdAt: Date.now(),
+    lastViewedAt: Date.now(),
+    data: str,
+    ip,
+    views: 0,
+  };
 
   requestDbSave();
   return id;
@@ -55,5 +84,17 @@ export async function getBuildById(id: string) {
     throw new Error('Invalid id');
   }
 
-  return db.builds[id.toUpperCase()];
+  id = id.toUpperCase();
+  if (db.builds[id]) {
+    db.builds[id].views++;
+    db.builds[id].lastViewedAt = Date.now();
+
+    if (Date.now() - lastDbSaveAt > 15_000) {
+      requestDbSave();
+    }
+
+    return db.builds[id].data;
+  } else {
+    return null;
+  }
 }

@@ -24,7 +24,7 @@ app.use('/image', (req, res) => {
 });
 
 app.put('/build', (req, res) => {
-  saveNewBuild(req.body.build)
+  saveNewBuild(req.body.build, req.socket.remoteAddress || '')
     .then((buildId) => {
       res.send(buildId);
     })
