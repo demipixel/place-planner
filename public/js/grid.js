@@ -52,7 +52,7 @@ class Grid {
     this.sprite.x = 0;
     this.sprite.y = 0;
     this.sprite.zIndex = -1;
-    this.sprite.alpha = 0.25;
+    this.sprite.alpha = 0.15;
     viewport.addChild(this.sprite);
 
     this.refreshRealImage(() => this.loadBuild(), true);
