@@ -84,6 +84,11 @@ class Grid {
           );
         }
 
+        if (this.hideRight) {
+          this.toggleHideRight();
+          this.toggleHideRight();
+        }
+
         // if (!this.editing && isFirstLoad) {
         //   this.toggleHideRight(true);
         //   document.getElementById('hide-right-checkbox').checked = true;
