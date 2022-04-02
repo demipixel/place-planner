@@ -5,7 +5,7 @@ const SIZE = 10;
 class Grid {
   constructor() {
     this.editing = false;
-    if (window.location.hash.length === 0) {
+    if (!window.location.hash && !window.location.search) {
       this.startEditing();
     }
     this.drawGrid = [];
