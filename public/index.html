@@ -85,28 +85,47 @@
     <div id="instruct">
       <b>Drag</b> to draw.<br /><b>Shift+Drag</b> to pan.<br /><b>Scroll</b> to
       zoom.<br />
-      <b>Option+Drag</b> to copy existing<br />
-      <button onClick="grid.startEditing()" id="edit-button">Edit</button>
-      <button
-        onClick="grid.clear(true)"
-        id="clear-button"
-        style="display: none"
+      <b>Option+Drag</b> to copy existing
+      <div
+        style="display: flex; justify-content: space-around; margin-top: 10px"
       >
-        Clear
-      </button>
-      <button onClick="grid.share()">Share</button>
-      <button onClick="grid.refreshRealImage()">Refresh</button>
-      <br />
-      <input
-        type="range"
-        min="0"
-        max="1"
-        step="0.01"
-        value="0.15"
-        id="opacity-slider"
-        onInput="grid.setOpacity(this.value)"
-      />
-      <br />
+        <button onClick="grid.startEditing()" id="edit-button">Edit</button>
+        <button
+          onClick="grid.clear(true)"
+          id="clear-button"
+          style="display: none"
+        >
+          Clear
+        </button>
+        <button onClick="grid.share()">Share</button>
+        <button onClick="grid.refreshRealImage()">Refresh</button>
+      </div>
+
+      <div
+        style="display: flex; justify-content: space-between; margin-top: 10px"
+      >
+        <div>Background</div>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value="0.15"
+          onInput="grid.setOpacity(this.value)"
+        />
+      </div>
+      <div style="display: flex; justify-content: space-between">
+        <div>Plan</div>
+        <input
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value="1"
+          onInput="grid.setBuildOpacity(this.value)"
+        />
+      </div>
+
       <input
         type="checkbox"
         id="hide-right-checkbox"

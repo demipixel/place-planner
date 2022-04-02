@@ -179,26 +179,36 @@ class Grid {
       this.cancelClick = true;
     }
 
+    this.hadMouseDown = true;
+
     this.startClickPoint = viewport.toWorld(
       event.data.global.x,
       event.data.global.y,
     );
+
+    if (
+      !this.editing &&
+      !this.isCopyKeyDown(event) &&
+      !event.data.originalEvent.shiftKey
+    ) {
+      this.doClickAction(event);
+    }
   }
 
   onButtonUp(event) {
+    if (this.isCopyKeyDown(event) || !this.editing) {
+      this.doClickAction(event, true);
+    }
+    this.hadMouseDown = false;
+  }
+
+  doClickAction(event, isUp = false) {
     if (this.cancelClick && (!this.editing || !this.isCopyKeyDown(event))) {
       this.cancelClick = false;
       return;
     }
 
-    const colorPicker = document.getElementById('color-picker');
-    const instruct = document.getElementById('instruct');
-    if (
-      (event.data.global.x <= colorPicker.clientWidth + 10 &&
-        event.data.global.y <= colorPicker.clientHeight + 10) ||
-      (event.data.global.x <= instruct.clientWidth + 10 &&
-        event.data.global.y >= window.innerHeight - instruct.clientHeight - 10)
-    ) {
+    if (this.isEventInGUI(event)) {
       return;
     }
 
@@ -215,7 +225,7 @@ class Grid {
 
     this.startClickPoint = null;
 
-    if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
+    if (!this.hadMouseDown || x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
       return;
     }
 
@@ -225,15 +235,25 @@ class Grid {
       } else {
         this.setSpriteColor(x, y, selectedColor);
       }
-    } else {
-      this.openLink(x, y);
+    } else if (isUp) {
+      setTimeout(() => this.openLink(x, y), 50);
     }
   }
 
+  isEventInGUI(event) {
+    const colorPicker = document.getElementById('color-picker');
+    const instruct = document.getElementById('instruct');
+
+    return (
+      (event.data.global.x <= colorPicker.clientWidth + 10 &&
+        event.data.global.y <= colorPicker.clientHeight + 10) ||
+      (event.data.global.x <= instruct.clientWidth + 10 &&
+        event.data.global.y >= window.innerHeight - instruct.clientHeight - 10)
+    );
+  }
+
   onButtonMove(event) {
-    if (viewport.moving) {
-      this.cancelClick = true;
-    }
+    this.cancelClick = viewport.moving;
 
     // check if space or shift keys are down
     const isShiftDown = event.data.originalEvent.shiftKey;
@@ -245,7 +265,7 @@ class Grid {
       !this.isCopyKeyDown(event) &&
       isClicking
     ) {
-      this.onButtonUp(event);
+      this.doClickAction(event);
     }
 
     const point = viewport.toWorld(event.data.global.x, event.data.global.y);
@@ -254,6 +274,7 @@ class Grid {
 
     this.coordsDom.innerText = x + ' , ' + y;
 
+    // Hover animation when in viewing mode
     if (!this.editing) {
       if (this.hoverPos.x !== x || this.hoverPos.y !== y) {
         const oldSprite = this.drawGrid[this.hoverPos.x]?.[this.hoverPos.y];
@@ -407,23 +428,25 @@ class Grid {
   }
 
   share() {
-    fetch('/build', {
-      method: 'PUT',
-      body: JSON.stringify({ build: this.getBase64OfDrawn() }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-      .then((res) => res.text())
-      .then((buildId) => {
-        const url =
-          window.location.origin + window.location.pathname + '?' + buildId;
+    (this.editing
+      ? fetch('/build', {
+          method: 'PUT',
+          body: JSON.stringify({ build: this.getBase64OfDrawn() }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).then((res) => res.text())
+      : // If we're viewing, it's the same as the URL
+        Promise.resolve(window.location.search.slice(1))
+    ).then((buildId) => {
+      const url =
+        window.location.origin + window.location.pathname + '?' + buildId;
 
-        window.prompt(
-          "Copy this URL and share it with others! They'll be able to view what you drew and start contributing to /r/place!",
-          url,
-        );
-      });
+      window.prompt(
+        "Copy this URL and share it with others! They'll be able to view what you drew and start contributing to /r/place!",
+        url,
+      );
+    });
   }
 
   clear(withPrompt) {
@@ -456,6 +479,10 @@ class Grid {
 
   setOpacity(opacity) {
     this.sprite.alpha = opacity;
+  }
+
+  setBuildOpacity(opacity) {
+    this.container.alpha = opacity;
   }
 
   toggleHideRight(force) {
