@@ -18,18 +18,6 @@ const db = JSON.parse(
   fs.readFileSync('./data.json', 'utf8') || '{"builds":{}}',
 ) as Data;
 
-Object.keys(db.builds).forEach((buildId) => {
-  if (typeof db.builds[buildId] === 'string') {
-    db.builds[buildId] = {
-      createdAt: Date.now(),
-      lastViewedAt: Date.now(),
-      data: db.builds[buildId] as unknown as string,
-      ip: '',
-      views: 0,
-    };
-  }
-});
-
 let lastDbSaveAt = 0;
 let saveInProgress = false;
 async function saveDb() {
