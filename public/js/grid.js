@@ -85,7 +85,7 @@ class Grid {
         }
 
         if (!this.editing && isFirstLoad) {
-          this.toggleHideRight();
+          this.toggleHideRight(true);
           document.getElementById('hide-right-checkbox').checked = true;
         }
       })
@@ -292,6 +292,10 @@ class Grid {
     fetch('/build/' + buildId)
       .then((res) => res.text())
       .then((text) => this.loadHash(text))
+      .then(() => {
+        this.toggleHideRight(true);
+        document.getElementById('hide-right-checkbox').checked = true;
+      })
       .catch((err) => {
         console.error(err);
         alert('Failed to load build');
@@ -399,8 +403,8 @@ class Grid {
     this.sprite.alpha = opacity;
   }
 
-  toggleHideRight() {
-    this.hideRight = !this.hideRight;
+  toggleHideRight(force) {
+    this.hideRight = force === undefined ? !this.hideRight : force;
 
     for (let x = 0; x < WIDTH; x++) {
       for (let y = 0; y < HEIGHT; y++) {
