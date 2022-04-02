@@ -285,6 +285,9 @@ class Grid {
 
     // get buildId param from url
     const buildId = window.location.search.slice(1);
+    if (!buildId) {
+      return;
+    }
 
     fetch('/build/' + buildId)
       .then((res) => res.text())
