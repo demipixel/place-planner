@@ -17,6 +17,8 @@ class Grid {
     this.container = new PIXI.Container();
     this.container.zIndex = 10;
 
+    this.coordsDom = document.getElementById('coords');
+
     const onButtonDown = this.onButtonDown.bind(this);
     const onButtonUp = this.onButtonUp.bind(this);
     const onButtonMove = this.onButtonMove.bind(this);
@@ -100,6 +102,51 @@ class Grid {
         );
         console.error(err);
       });
+  }
+
+  test() {
+    const image = new Image();
+    image.src = '/img/star-wars.png';
+    let canvas = document.createElement('CANVAS');
+    canvas.width = WIDTH * SIZE;
+    canvas.height = HEIGHT * SIZE;
+    let ctx = canvas.getContext('2d');
+
+    image.onload = () => {
+      ctx.drawImage(image, 0, 0);
+
+      let pixel = ctx.getImageData(0, 0, 100, 145);
+
+      let str = '';
+      for (let i = 0; i < pixel.data.length; i += 4) {
+        let x = (Math.floor(i / 4) % 100) + 571;
+        let y = Math.floor(i / 4 / 100) + 699;
+        //Find closet color
+        const color = COLOR_MAP.reduce(
+          (acc, curr, index) => {
+            if (index === COLOR_MAP.length - 1) {
+              return acc;
+            }
+            const distance = Math.sqrt(
+              Math.pow(Math.abs(curr.r - pixel.data[i]), 2) +
+                Math.pow(Math.abs(curr.g - pixel.data[i + 1]), 2) +
+                Math.pow(Math.abs(curr.b - pixel.data[i + 2]), 2),
+            );
+            if (distance < acc.distance) {
+              return {
+                index,
+                distance,
+              };
+            }
+            return acc;
+          },
+          { index: null, distance: Infinity },
+        ).index;
+        str += 'grid.setSpriteColor(' + x + ',' + y + ',' + color + ')\n';
+      }
+
+      console.log(str);
+    };
   }
 
   openLink(x, y) {
@@ -201,11 +248,13 @@ class Grid {
       this.onButtonUp(event);
     }
 
-    if (!this.editing) {
-      const point = viewport.toWorld(event.data.global.x, event.data.global.y);
-      const x = Math.floor(point.x / 10);
-      const y = Math.floor(point.y / 10);
+    const point = viewport.toWorld(event.data.global.x, event.data.global.y);
+    const x = Math.floor(point.x / 10);
+    const y = Math.floor(point.y / 10);
 
+    this.coordsDom.innerText = x + ' , ' + y;
+
+    if (!this.editing) {
       if (this.hoverPos.x !== x || this.hoverPos.y !== y) {
         const oldSprite = this.drawGrid[this.hoverPos.x]?.[this.hoverPos.y];
         if (oldSprite) {

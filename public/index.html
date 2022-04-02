@@ -46,6 +46,22 @@
       border-top-width: 0px;
     }
 
+    #coords {
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 1;
+      width: 80px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 20px;
+      padding: 0px 5px 5px 0px;
+      background: white;
+      border: 3px solid black;
+      border-right-width: 0px;
+      border-top-width: 0px;
+    }
+
     #instruct {
       position: absolute;
       bottom: 0;
@@ -60,6 +76,7 @@
   </style>
   <body onLoad="start()">
     <div id="color-picker"></div>
+    <div id="coords"></div>
     <div id="instruct">
       <b>Drag</b> to draw.<br /><b>Shift+Drag</b> to pan.<br /><b>Scroll</b> to
       zoom.<br />
