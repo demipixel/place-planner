@@ -1,0 +1,81 @@
+<html>
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/6.3.0/browser/pixi.js"
+    integrity="sha512-/jrokokZqIVlUpS1CfkGuMUq3xMUUMCEY+RtvxiGmthzq3Aj+6jm16BcPw/rNNKGnhhJqxSoL6QEknu8spzNkw=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  ></script>
+  <script src="https://unpkg.com/pixi-viewport@4.34.4/dist/viewport.min.js"></script>
+  <script src="/js/util.js"></script>
+  <script src="/js/grid.js"></script>
+  <script src="/js/color-picker.js"></script>
+  <script src="/js/viewport.js"></script>
+  <script src="/js/main.js"></script>
+  <style>
+    body,
+    html {
+      margin: 0;
+      overflow: hidden;
+      /* padding: 0; */
+    }
+
+    #color-picker {
+      display: flex;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      padding: 0px 5px 5px 0px;
+      background: #ff4500;
+      border: 3px solid black;
+      border-left-width: 0px;
+      border-top-width: 0px;
+    }
+
+    #instruct {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      z-index: 1;
+      padding: 3px;
+      background: white;
+      border: 3px solid black;
+      border-left-width: 0px;
+      border-top-width: 0px;
+    }
+  </style>
+  <body onLoad="start()">
+    <div id="color-picker"></div>
+    <div id="instruct">
+      <b>Drag</b> to draw.<br /><b>Shift+Drag</b> to pan.<br /><b>Scroll</b> to
+      zoom.<br />
+      <button onClick="grid.startEditing()" id="edit-button">Edit</button>
+      <button
+        onClick="grid.clear(true)"
+        id="clear-button"
+        style="display: none"
+      >
+        Clear
+      </button>
+      <button onClick="grid.share()">Share</button>
+      <button onClick="grid.refreshRealImage()">Refresh</button>
+      <br />
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value="0.25"
+        id="opacity-slider"
+        onInput="grid.setOpacity(this.value)"
+      />
+      <br />
+      <input
+        type="checkbox"
+        id="hide-right-checkbox"
+        onClick="grid.toggleHideRight()"
+      />
+      Only show required changes
+    </div>
+  </body>
+</html>
