@@ -91,10 +91,10 @@ class Grid {
           this.toggleHideRight();
         }
 
-        // if (!this.editing && isFirstLoad) {
-        //   this.toggleHideRight(true);
-        //   document.getElementById('hide-right-checkbox').checked = true;
-        // }
+        if (!this.editing && isFirstLoad) {
+          this.toggleHideRight(true);
+          document.getElementById('hide-right-checkbox').checked = true;
+        }
       })
       .catch((err) => {
         alert(
@@ -344,10 +344,10 @@ class Grid {
     fetch('/build/' + buildId)
       .then((res) => res.text())
       .then((text) => this.loadHash(text))
-      // .then(() => {
-      //   this.toggleHideRight(true);
-      //   document.getElementById('hide-right-checkbox').checked = true;
-      // })
+      .then(() => {
+        this.toggleHideRight(true);
+        document.getElementById('hide-right-checkbox').checked = true;
+      })
       .catch((err) => {
         console.error(err);
         alert('Failed to load build');
@@ -362,8 +362,9 @@ class Grid {
       return;
     }
 
-    let topLeftX = null;
-    let topLeftY = null;
+    let sumX = 0;
+    let sumY = 0;
+    let count = 0;
 
     for (let i = 0; i < arr.length; i += 4) {
       const lowerX = arr[i];
@@ -377,11 +378,6 @@ class Grid {
       const colors = arr.slice(i + 4, i + 4 + numColors);
       i += numColors;
 
-      if (topLeftX === null) {
-        topLeftX = x;
-        topLeftY = y;
-      }
-
       if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
         continue;
       }
@@ -391,12 +387,19 @@ class Grid {
           const miniX = x + Math.floor((y + j) / HEIGHT);
           const miniY = (y + j) % HEIGHT;
           this.setSpriteColor(miniX, miniY, colors[j]);
+
+          sumX += miniX;
+          sumY += miniY;
+          count++;
         }
       }
     }
 
+    const centerX = Math.floor(sumX / count);
+    const centerY = Math.floor(sumY / count);
+
     viewport.animate({
-      position: new PIXI.Point(topLeftX * SIZE, topLeftY * SIZE),
+      position: new PIXI.Point(centerX * SIZE, centerY * SIZE),
       ease: 'easeInOutCubic',
       duration: 3000,
       scale: 1,
@@ -457,6 +460,10 @@ class Grid {
 
   toggleHideRight(force) {
     this.hideRight = force === undefined ? !this.hideRight : force;
+
+    const domText = document.getElementById('hide-right-text');
+
+    domText.style.color = this.hideRight ? 'red' : '';
 
     for (let x = 0; x < WIDTH; x++) {
       for (let y = 0; y < HEIGHT; y++) {
