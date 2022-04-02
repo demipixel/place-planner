@@ -134,11 +134,9 @@ class Grid {
   }
 
   onButtonUp(event) {
-    if (this.cancelClick && !this.isCopyKeyDown(event)) {
+    if (this.cancelClick && (!this.editing || !this.isCopyKeyDown(event))) {
       this.cancelClick = false;
-      if (this.editing) {
-        return;
-      }
+      return;
     }
 
     const colorPicker = document.getElementById('color-picker');
