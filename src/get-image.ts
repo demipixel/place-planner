@@ -1,13 +1,14 @@
-import { client as WebsocketClient, connection, Message } from 'websocket';
 import axios from 'axios';
+import { client as WebsocketClient, connection, Message } from 'websocket';
 
-const client = new WebsocketClient();
 let accessToken: string | null = null;
 
 export async function getCurrentImage(attempts = 0) {
   if (attempts >= 3) {
     throw new Error('Too many attempts');
   }
+
+  const client = new WebsocketClient();
 
   if (!accessToken) {
     await refreshAccessToken();
@@ -73,7 +74,13 @@ export async function getCurrentImage(attempts = 0) {
             .catch(rej);
         } else if (parsed.type === 'connection_error') {
           refreshAccessToken()
-            .then(() => res(getCurrentImage(attempts + 1)))
+            .then(async () => {
+              try {
+                res(await getCurrentImage(attempts + 1));
+              } catch (e) {
+                rej(e);
+              }
+            })
             .catch(console.error);
         }
       };
