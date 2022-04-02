@@ -1,3 +1,5 @@
 {
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "tsImportSorter.configuration.keepUnused": [],
+  "editor.codeActionsOnSave": ["source.organizeImports.sortImports"]
 }

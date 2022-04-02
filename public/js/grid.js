@@ -21,7 +21,7 @@ class Grid {
     const onButtonUp = this.onButtonUp.bind(this);
     const onButtonMove = this.onButtonMove.bind(this);
 
-    this.container
+    viewport
       .on('mousedown', onButtonDown)
       .on('mouseup', onButtonUp)
       .on('mousemove', onButtonMove)
@@ -53,7 +53,7 @@ class Grid {
     this.sprite.alpha = 0.25;
     viewport.addChild(this.sprite);
 
-    this.refreshRealImage(() => this.loadHash(), true);
+    this.refreshRealImage(() => this.loadBuild(), true);
   }
 
   refreshRealImage(cb, isFirstLoad = false) {
@@ -126,10 +126,15 @@ class Grid {
     if (viewport.moving) {
       this.cancelClick = true;
     }
+
+    this.startClickPoint = viewport.toWorld(
+      event.data.global.x,
+      event.data.global.y,
+    );
   }
 
   onButtonUp(event) {
-    if (this.cancelClick) {
+    if (this.cancelClick && !this.isCopyKeyDown(event)) {
       this.cancelClick = false;
       if (this.editing) {
         return;
@@ -147,11 +152,18 @@ class Grid {
       return;
     }
 
-    console.log(event.currentTarget, event.target);
-
     const point = viewport.toWorld(event.data.global.x, event.data.global.y);
     const x = Math.floor(point.x / 10);
     const y = Math.floor(point.y / 10);
+
+    if (this.startClickPoint && this.isCopyKeyDown(event)) {
+      const startX = Math.floor(this.startClickPoint.x / 10);
+      const startY = Math.floor(this.startClickPoint.y / 10);
+      this.makeDrawn(startX, startY, x, y);
+      return;
+    }
+
+    this.startClickPoint = null;
 
     if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
       return;
@@ -177,7 +189,12 @@ class Grid {
     const isShiftDown = event.data.originalEvent.shiftKey;
     const isClicking = event.data.originalEvent.buttons === 1;
 
-    if (this.editing && !isShiftDown && isClicking) {
+    if (
+      this.editing &&
+      !isShiftDown &&
+      !this.isCopyKeyDown(event) &&
+      isClicking
+    ) {
       this.onButtonUp(event);
     }
 
@@ -202,6 +219,21 @@ class Grid {
     }
   }
 
+  makeDrawn(startX, startY, endX, endY) {
+    for (let x = Math.min(startX, endX); x <= Math.max(startX, endX); x++) {
+      for (let y = Math.min(startY, endY); y <= Math.max(startY, endY); y++) {
+        if (this.actualGrid?.[x]?.[y] !== undefined) {
+          this.setSpriteColor(x, y, this.actualGrid[x][y]);
+        }
+      }
+    }
+  }
+
+  isCopyKeyDown(event) {
+    // Option key
+    return event.data.originalEvent.altKey;
+  }
+
   getBase64OfDrawn() {
     var arr = [];
     let groupPos = null;
@@ -213,14 +245,6 @@ class Grid {
       const upperX = Math.floor(groupPos.x / 256);
       const upperY = Math.floor(groupPos.y / 256);
       const upper = upperX * 16 + upperY;
-
-      console.log(groupPos.x, groupPos.y, {
-        lowerX,
-        lowerY,
-        upperX,
-        upperY,
-        upper,
-      });
 
       arr.push(lowerX, lowerY, upper, groupColors.length, ...groupColors);
     };
@@ -252,14 +276,32 @@ class Grid {
     return base64;
   }
 
-  loadHash() {
-    const hash = window.location.hash.substr(1);
-    if (hash.length === 0) {
+  loadBuild() {
+    const hash = window.location.hash.slice(1);
+    if (hash.length > 1) {
+      this.loadHash(hash);
       return;
     }
 
+    // get buildId param from url
+    const buildId = window.location.search.slice(1);
+
+    fetch('/build/' + buildId)
+      .then((res) => res.text())
+      .then((text) => this.loadHash(text))
+      .catch((err) => {
+        console.error(err);
+        alert('Failed to load build');
+      });
+  }
+
+  loadHash(hash) {
     const data = base64ToBuffer(hash);
     const arr = Array.from(data);
+
+    if (arr.length === 0) {
+      return;
+    }
 
     let topLeftX = null;
     let topLeftY = null;
@@ -289,13 +331,10 @@ class Grid {
         if (colors[j] >= 0 && colors[j] < COLOR_MAP.length - 1) {
           const miniX = x + Math.floor((y + j) / HEIGHT);
           const miniY = (y + j) % HEIGHT;
-          console.log(miniX, miniY, colors[j]);
           this.setSpriteColor(miniX, miniY, colors[j]);
         }
       }
     }
-
-    console.log(topLeftX, topLeftY);
 
     viewport.animate({
       position: new PIXI.Point(topLeftX * SIZE, topLeftY * SIZE),
@@ -306,16 +345,23 @@ class Grid {
   }
 
   share() {
-    const url =
-      window.location.origin +
-      window.location.pathname +
-      '#' +
-      this.getBase64OfDrawn();
+    fetch('/build', {
+      method: 'PUT',
+      body: JSON.stringify({ build: this.getBase64OfDrawn() }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+      .then((res) => res.text())
+      .then((buildId) => {
+        const url =
+          window.location.origin + window.location.pathname + '?' + buildId;
 
-    window.prompt(
-      "Copy this URL and share it with others! They'll be able to view what you drew and start contributing to /r/place!",
-      url,
-    );
+        window.prompt(
+          "Copy this URL and share it with others! They'll be able to view what you drew and start contributing to /r/place!",
+          url,
+        );
+      });
   }
 
   clear(withPrompt) {
