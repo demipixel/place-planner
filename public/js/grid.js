@@ -84,10 +84,10 @@ class Grid {
           );
         }
 
-        if (!this.editing && isFirstLoad) {
-          this.toggleHideRight(true);
-          document.getElementById('hide-right-checkbox').checked = true;
-        }
+        // if (!this.editing && isFirstLoad) {
+        //   this.toggleHideRight(true);
+        //   document.getElementById('hide-right-checkbox').checked = true;
+        // }
       })
       .catch((err) => {
         alert(
@@ -292,10 +292,10 @@ class Grid {
     fetch('/build/' + buildId)
       .then((res) => res.text())
       .then((text) => this.loadHash(text))
-      .then(() => {
-        this.toggleHideRight(true);
-        document.getElementById('hide-right-checkbox').checked = true;
-      })
+      // .then(() => {
+      //   this.toggleHideRight(true);
+      //   document.getElementById('hide-right-checkbox').checked = true;
+      // })
       .catch((err) => {
         console.error(err);
         alert('Failed to load build');
