@@ -6,11 +6,11 @@ import https from 'https';
 import path from 'path';
 
 import { getBuildById, saveNewBuild } from './db';
-import { getCurrentImage } from './get-image';
+import { getCurrentImages } from './get-image';
 
 const app = express();
 
-let cachedImage: any = null;
+let cachedImages: any = [];
 
 app.use(
   json({
@@ -20,7 +20,7 @@ app.use(
 
 app.use('/image', (req, res) => {
   res.set('Content-Type', 'image/png');
-  res.send(cachedImage);
+  res.send(cachedImages[req.query.i as string]);
 });
 
 app.put('/build', (req, res) => {
@@ -78,9 +78,9 @@ if (process.env.NODE_ENV == 'production') {
 }
 
 function refreshImageCache() {
-  getCurrentImage()
-    .then((image) => {
-      cachedImage = image;
+  getCurrentImages()
+    .then((images) => {
+      cachedImages = images;
     })
     .catch(console.error);
 }

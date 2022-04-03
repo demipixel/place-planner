@@ -3,7 +3,7 @@ import { client as WebsocketClient, connection, Message } from 'websocket';
 
 let accessToken: string | null = null;
 
-export async function getCurrentImage(attempts = 0) {
+export async function getCurrentImages(attempts = 0) {
   if (attempts >= 3) {
     throw new Error('Too many attempts');
   }
@@ -48,6 +48,19 @@ export async function getCurrentImage(attempts = 0) {
         }
       }, 5000);
 
+      const images: any[] = [];
+      let imageCount = 0;
+      const gotAll = () => {
+        imageCount++;
+        if (imageCount === images.length) {
+          offClientListeners();
+          offConnListeners();
+          client.abort();
+          complete = true;
+          res(images);
+        }
+      };
+
       const onMessage = (event: Message) => {
         if (event.type !== 'utf8') {
           return;
@@ -60,23 +73,27 @@ export async function getCurrentImage(attempts = 0) {
             'FullFrameMessageData'
         ) {
           const imageUrl = parsed.payload.data.subscribe.data.name;
-          offClientListeners();
-          offConnListeners();
-          client.abort();
+          const match = imageUrl.match(/-(\d)-f/);
+          if (!match) {
+            return;
+          }
+
+          const imageIndex = parseInt(match[1], 10);
+
           axios
             .get(imageUrl, {
               responseType: 'arraybuffer',
             })
             .then((response) => {
-              complete = true;
-              res(response.data);
+              images[imageIndex] = response.data;
+              gotAll();
             })
             .catch(rej);
         } else if (parsed.type === 'connection_error') {
           refreshAccessToken()
             .then(async () => {
               try {
-                res(await getCurrentImage(attempts + 1));
+                res(await getCurrentImages(attempts + 1));
               } catch (e) {
                 rej(e);
               }
@@ -93,23 +110,29 @@ export async function getCurrentImage(attempts = 0) {
         }),
       );
 
-      conn.send(
-        JSON.stringify({
-          id: '1',
-          type: 'start',
-          payload: {
-            variables: {
-              input: {
-                channel: { teamOwner: 'AFD2022', category: 'CANVAS', tag: '0' },
+      for (let i = 0; i < 4; i++) {
+        conn.send(
+          JSON.stringify({
+            id: '1',
+            type: 'start',
+            payload: {
+              variables: {
+                input: {
+                  channel: {
+                    teamOwner: 'AFD2022',
+                    category: 'CANVAS',
+                    tag: i.toString(),
+                  },
+                },
               },
+              extensions: {},
+              operationName: 'replace',
+              query:
+                'subscription replace($input: SubscribeInput!) {\n  subscribe(input: $input) {\n    id\n    ... on BasicMessage {\n      data {\n        __typename\n        ... on FullFrameMessageData {\n          __typename\n          name\n          timestamp\n        }\n        ... on DiffFrameMessageData {\n          __typename\n          name\n          currentTimestamp\n          previousTimestamp\n        }\n      }\n      __typename\n    }\n    __typename\n  }\n}\n',
             },
-            extensions: {},
-            operationName: 'replace',
-            query:
-              'subscription replace($input: SubscribeInput!) {\n  subscribe(input: $input) {\n    id\n    ... on BasicMessage {\n      data {\n        __typename\n        ... on FullFrameMessageData {\n          __typename\n          name\n          timestamp\n        }\n        ... on DiffFrameMessageData {\n          __typename\n          name\n          currentTimestamp\n          previousTimestamp\n        }\n      }\n      __typename\n    }\n    __typename\n  }\n}\n',
-          },
-        }),
-      );
+          }),
+        );
+      }
     };
 
     client.on('connectFailed', onConnFailed);

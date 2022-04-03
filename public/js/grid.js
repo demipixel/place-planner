@@ -1,6 +1,8 @@
-const HEIGHT = 1000;
-const WIDTH = 1000;
-const SIZE = 10;
+const HEIGHT = 2000;
+const WIDTH = 2000;
+const PIXEL_SIZE = 10;
+
+const IMG_SIZE = 1000;
 
 class Grid {
   constructor() {
@@ -46,70 +48,77 @@ class Grid {
       }
     }
 
-    this.sprite = new PIXI.Sprite();
-    this.sprite.width = WIDTH * SIZE;
-    this.sprite.height = HEIGHT * SIZE;
-    this.sprite.x = 0;
-    this.sprite.y = 0;
-    this.sprite.zIndex = -1;
-    this.sprite.alpha = 0.15;
-    viewport.addChild(this.sprite);
+    this.sprites = [];
+    for (let i = 0; i < 4; i++) {
+      const sprite = new PIXI.Sprite();
+      this.sprites.push(sprite);
+      sprite.width = IMG_SIZE * PIXEL_SIZE;
+      sprite.height = IMG_SIZE * PIXEL_SIZE;
+      sprite.x = (i % 2) * IMG_SIZE * PIXEL_SIZE;
+      sprite.y = Math.floor(i / 2) * IMG_SIZE * PIXEL_SIZE;
+      sprite.zIndex = -1;
+      sprite.alpha = 0.15;
+      viewport.addChild(sprite);
+    }
 
     this.refreshRealImage(() => this.loadBuild(), true);
   }
 
   refreshRealImage(cb, isFirstLoad = false) {
-    PIXI.Texture.fromURL('/image?r=' + Math.random())
-      .then((texture) => {
-        this.sprite.texture = texture;
-        this.sprite.texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
-        if (cb) {
-          cb();
-        }
-        let canvas = document.createElement('CANVAS');
-        canvas.width = WIDTH * SIZE;
-        canvas.height = HEIGHT * SIZE;
-        let ctx = canvas.getContext('2d');
+    for (let image = 0; image < 4; image++) {
+      PIXI.Texture.fromURL('/image?i=' + image + '&r=' + Math.random())
+        .then((texture) => {
+          this.sprites[image].texture = texture;
+          this.sprites[image].texture.baseTexture.scaleMode =
+            PIXI.SCALE_MODES.NEAREST;
+          if (cb) {
+            cb();
+          }
+          let canvas = document.createElement('CANVAS');
+          canvas.width = WIDTH * PIXEL_SIZE;
+          canvas.height = HEIGHT * PIXEL_SIZE;
+          let ctx = canvas.getContext('2d');
 
-        ctx.drawImage(texture.baseTexture.resource.source, 0, 0);
+          ctx.drawImage(texture.baseTexture.resource.source, 0, 0);
 
-        let pixel = ctx.getImageData(0, 0, 1000, 1000);
-        for (let i = 0; i < pixel.data.length; i += 4) {
-          let x = Math.floor(i / 4) % 1000;
-          let y = Math.floor(i / 4 / 1000);
-          this.actualGrid[x][y] = COLOR_MAP_NUM.indexOf(
-            rgbToNum({
-              r: pixel.data[i],
-              g: pixel.data[i + 1],
-              b: pixel.data[i + 2],
-            }),
+          let pixel = ctx.getImageData(0, 0, 1000, 1000);
+          for (let i = 0; i < pixel.data.length; i += 4) {
+            let x = (Math.floor(i / 4) % 1000) + (image % 2) * 1000;
+            let y = Math.floor(i / 4 / 1000) + Math.floor(image / 2) * 1000;
+            this.actualGrid[x][y] = COLOR_MAP_NUM.indexOf(
+              rgbToNum({
+                r: pixel.data[i],
+                g: pixel.data[i + 1],
+                b: pixel.data[i + 2],
+              }),
+            );
+          }
+
+          if (this.hideRight) {
+            this.toggleHideRight();
+            this.toggleHideRight();
+          }
+
+          if (!this.editing && isFirstLoad) {
+            this.toggleHideRight(true);
+            document.getElementById('hide-right-checkbox').checked = true;
+          }
+        })
+        .catch((err) => {
+          alert(
+            'There was an error loading the image. Please try again later :(',
           );
-        }
-
-        if (this.hideRight) {
-          this.toggleHideRight();
-          this.toggleHideRight();
-        }
-
-        if (!this.editing && isFirstLoad) {
-          this.toggleHideRight(true);
-          document.getElementById('hide-right-checkbox').checked = true;
-        }
-      })
-      .catch((err) => {
-        alert(
-          'There was an error loading the image. Please try again later :(',
-        );
-        console.error(err);
-      });
+          console.error(err);
+        });
+    }
   }
 
   test() {
     const image = new Image();
     image.src = '/img/star-wars.png';
     let canvas = document.createElement('CANVAS');
-    canvas.width = WIDTH * SIZE;
-    canvas.height = HEIGHT * SIZE;
+    canvas.width = WIDTH * PIXEL_SIZE;
+    canvas.height = HEIGHT * PIXEL_SIZE;
     let ctx = canvas.getContext('2d');
 
     image.onload = () => {
@@ -161,8 +170,8 @@ class Grid {
       const sprite = new PIXI.Sprite(PIXI.Texture.WHITE);
       sprite.width = 10;
       sprite.height = 10;
-      sprite.x = x * SIZE;
-      sprite.y = y * SIZE;
+      sprite.x = x * PIXEL_SIZE;
+      sprite.y = y * PIXEL_SIZE;
       this.container.addChild(sprite);
       this.drawGrid[x][y] = sprite;
     }
@@ -420,7 +429,7 @@ class Grid {
     const centerY = Math.floor(sumY / count);
 
     viewport.animate({
-      position: new PIXI.Point(centerX * SIZE, centerY * SIZE),
+      position: new PIXI.Point(centerX * PIXEL_SIZE, centerY * PIXEL_SIZE),
       ease: 'easeInOutCubic',
       duration: 3000,
       scale: 1,
