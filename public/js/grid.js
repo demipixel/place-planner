@@ -65,18 +65,17 @@ class Grid {
   }
 
   refreshRealImage(cb, isFirstLoad = false) {
+    let loadCount = 0;
     for (let image = 0; image < 4; image++) {
       PIXI.Texture.fromURL('/image?i=' + image + '&r=' + Math.random())
         .then((texture) => {
           this.sprites[image].texture = texture;
           this.sprites[image].texture.baseTexture.scaleMode =
             PIXI.SCALE_MODES.NEAREST;
-          if (cb) {
-            cb();
-          }
+
           let canvas = document.createElement('CANVAS');
-          canvas.width = WIDTH * PIXEL_SIZE;
-          canvas.height = HEIGHT * PIXEL_SIZE;
+          canvas.width = IMG_SIZE * PIXEL_SIZE;
+          canvas.height = IMG_SIZE * PIXEL_SIZE;
           let ctx = canvas.getContext('2d');
 
           ctx.drawImage(texture.baseTexture.resource.source, 0, 0);
@@ -102,6 +101,10 @@ class Grid {
           if (!this.editing && isFirstLoad) {
             this.toggleHideRight(true);
             document.getElementById('hide-right-checkbox').checked = true;
+          }
+
+          if (++loadCount === 4 && cb) {
+            cb();
           }
         })
         .catch((err) => {
@@ -487,7 +490,9 @@ class Grid {
   }
 
   setOpacity(opacity) {
-    this.sprite.alpha = opacity;
+    for (const sprite of this.sprites) {
+      sprite.alpha = opacity;
+    }
   }
 
   setBuildOpacity(opacity) {
