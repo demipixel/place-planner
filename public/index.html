@@ -87,7 +87,12 @@
       zoom.<br />
       <b>Option+Drag</b> to copy existing
       <div
-        style="display: flex; justify-content: space-around; margin-top: 10px"
+        style="
+          display: flex;
+          justify-content: space-around;
+          margin-top: 10px;
+          margin-bottom: 10px;
+        "
       >
         <button onClick="grid.startEditing()" id="edit-button">Edit</button>
         <button
@@ -99,6 +104,10 @@
         </button>
         <button onClick="grid.share()">Share</button>
         <button onClick="grid.refreshRealImage()">Refresh</button>
+      </div>
+
+      <div style="display: flex; justify-content: center">
+        <input type="file" id="upload-image" onchange="grid.uploadImage()" />
       </div>
 
       <div

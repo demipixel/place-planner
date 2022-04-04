@@ -134,26 +134,11 @@ class Grid {
         let x = (Math.floor(i / 4) % 100) + 571;
         let y = Math.floor(i / 4 / 100) + 699;
         //Find closet color
-        const color = COLOR_MAP.reduce(
-          (acc, curr, index) => {
-            if (index === COLOR_MAP.length - 1) {
-              return acc;
-            }
-            const distance = Math.sqrt(
-              Math.pow(Math.abs(curr.r - pixel.data[i]), 2) +
-                Math.pow(Math.abs(curr.g - pixel.data[i + 1]), 2) +
-                Math.pow(Math.abs(curr.b - pixel.data[i + 2]), 2),
-            );
-            if (distance < acc.distance) {
-              return {
-                index,
-                distance,
-              };
-            }
-            return acc;
-          },
-          { index: null, distance: Infinity },
-        ).index;
+        const color = this.getNearestPalleteColor(
+          pixel.data[i],
+          pixel.data[i + 1],
+          pixel.data[i + 2],
+        );
         str += 'grid.setSpriteColor(' + x + ',' + y + ',' + color + ')\n';
       }
 
@@ -523,5 +508,103 @@ class Grid {
         }
       }
     }
+  }
+
+  uploadImage() {
+    const inputElement = document.getElementById('upload-image');
+    const image = inputElement.files[0];
+
+    if (!image) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = e.target.result;
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const dataArray = imageData.data;
+
+        let coords;
+
+        do {
+          const coordsStr = prompt(
+            'Enter the coordinates of where you want the top left pixel of the image to start.\n\n' +
+              'Example: "0,0"',
+            '0,0',
+          );
+          const [xStr, yStr] = coordsStr.split(',');
+
+          const x = parseInt(xStr, 10);
+          const y = parseInt(yStr, 10);
+
+          if (
+            isNaN(x) ||
+            isNaN(y) ||
+            x < 0 ||
+            x >= WIDTH ||
+            y < 0 ||
+            y >= HEIGHT
+          ) {
+            coords = null;
+          }
+
+          coords = [x, y];
+        } while (!coords);
+
+        for (let i = 0; i < dataArray.length; i += 4) {
+          const x = Math.floor(i / 4) % img.width;
+          const y = Math.floor(i / 4 / img.width);
+
+          const color = this.getNearestPalleteColor(
+            dataArray[i],
+            dataArray[i + 1],
+            dataArray[i + 2],
+          );
+
+          if (color >= 0 && x + coords[0] < WIDTH && y + coords[1] < HEIGHT) {
+            this.setSpriteColor(x + coords[0], y + coords[1], color);
+          }
+        }
+
+        inputElement.value = '';
+      };
+      img.onerror = (err) => {
+        alert('There was an error loading the image');
+        console.error(err);
+      };
+      img.src = data;
+    };
+    reader.readAsDataURL(image);
+  }
+
+  getNearestPalleteColor(r, g, b) {
+    return COLOR_MAP.reduce(
+      (acc, curr, index) => {
+        if (index === COLOR_MAP.length - 1) {
+          return acc;
+        }
+        const distance = Math.sqrt(
+          Math.pow(Math.abs(curr.r - r), 2) +
+            Math.pow(Math.abs(curr.g - g), 2) +
+            Math.pow(Math.abs(curr.b - b), 2),
+        );
+        if (distance < acc.distance) {
+          return {
+            index,
+            distance,
+          };
+        }
+        return acc;
+      },
+      { index: 0, distance: Infinity },
+    ).index;
   }
 }
