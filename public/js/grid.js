@@ -569,7 +569,12 @@ class Grid {
             dataArray[i + 2],
           );
 
-          if (color >= 0 && x + coords[0] < WIDTH && y + coords[1] < HEIGHT) {
+          if (
+            color >= 0 &&
+            dataArray[i + 3] > 0 &&
+            x + coords[0] < WIDTH &&
+            y + coords[1] < HEIGHT
+          ) {
             this.setSpriteColor(x + coords[0], y + coords[1], color);
           }
         }
